@@ -1,0 +1,51 @@
+#%RAML 1.0
+
+title: sfs-trade-line-s
+description: |
+  This is a system API that will enable CRUD operations for Trade lines, Consumers can liverage endpoints with below description<BR>
+  <li>trade-lines : To get the list and to bulk insert</li>
+  <li>trade-line : To insert, update and delete one tradeline object</li>
+
+baseUri: https://serverhostname:443/sfs-trade-line-s/
+version: v1
+protocols:
+  - HTTPS
+securedBy:
+  - oauth_2_0
+
+traits:
+  invalidResponse : !include modules/trait-restful-error-response.raml
+  successResponse : !include modules/trait-restful-valid-response.raml
+  successFetchResponse : !include modules/trait-restful-valid-fetch-response.raml
+  tradeline-request: !include modules/trait-tradeline-request.raml
+  tradelines-request: !include modules/trait-tradeline-array-request.raml
+
+
+types:
+  trade-line: !include dataTypes/tradeline.raml
+  trade-lines: trade-line[] 
+  successStatus: !include dataTypes/success.raml
+
+securitySchemes:
+  oauth_2_0: !include modules/oAuthSecurityScheme.raml
+
+/trade-lines:
+  type: tradelines
+
+/trade-line:
+  type: tradeline
+
+resourceTypes:
+  tradelines:
+    get:
+      is: [invalidResponse, successFetchResponse]
+    post:
+      is: [invalidResponse, successResponse]
+  
+  tradeline:
+    post:
+      is: [tradeline-request, invalidResponse, successResponse]    
+    put:
+      is: [tradeline-request, invalidResponse, successResponse]
+    delete:
+      is: [tradeline-request, invalidResponse, successResponse]

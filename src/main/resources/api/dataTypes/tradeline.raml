@@ -1,0 +1,23 @@
+#%RAML 1.0 DataType
+type: object
+displayName: TradeLine
+additionalProperties: true
+properties:
+  id:
+    type: integer
+    required: true
+  creditorName: 
+    type: string
+    required: true
+  firstName: 
+    type: string
+    required: true
+  lastName: 
+    type: string
+    required: true
+  minPaymentPercentage:
+     type: number
+     required: true
+  balance: 
+    type: number
+    required: true

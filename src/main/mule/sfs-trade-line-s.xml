@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+    <http:listener-config name="sfs-trade-line-s-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="${secure::api.port}" protocol="HTTPS">
+			<tls:context >
+				<tls:key-store type="jks" path="${secure::app.keyPath}" keyPassword="${secure::app.keyPassword}" password="${secure::app.keyPassword}"/>
+			</tls:context>
+		</http:listener-connection>
+    </http:listener-config>
+    <apikit:config name="sfs-trade-line-s-config" api="sfs-trade-line-s.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="sfs-trade-line-s-main">
+        <http:listener config-ref="sfs-trade-line-s-httpListenerConfig" path="${secure::app.baseURL}">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="sfs-trade-line-s-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <set-variable value="Bad Request" doc:name="Set Error Meesage" doc:id="2924b8e4-96d9-4cf7-86c0-66d44688af4b" variableName="ERROR_MESSAGE"/>
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:name="Transform Error Message">
+                    <ee:message>
+						<ee:set-payload resource="Error_Message.dwl" />
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[400]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <set-variable value="Not Found" doc:name="Set Error Meesage" doc:id="9a238aeb-ec2e-4279-bab3-60afb971b120" variableName="ERROR_MESSAGE" />
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:name="Transform Error Message">
+                    <ee:message>
+                        <ee:set-payload resource="Error_Message.dwl" />
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <set-variable value="Method Now Allowed" doc:name="Set Error Meesage" doc:id="91aad648-5d66-42ac-be2f-285df629bfa1" variableName="ERROR_MESSAGE" />
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:name="Transform Error Message">
+                    <ee:message>
+                         <ee:set-payload resource="Error_Message.dwl" />
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <set-variable value="Not Acceptable" doc:name="Set Error Meesage" doc:id="ac539de1-2b59-43c2-84de-9696803342dc" variableName="ERROR_MESSAGE" />
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:name="Transform Error Message">
+                    <ee:message>
+                        <ee:set-payload resource="Error_Message.dwl" />
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <set-variable value="Unsupported Media Type" doc:name="Set Error Meesage" doc:id="f594490e-2177-4174-8ec4-4f4bdcfa4c2b" variableName="ERROR_MESSAGE" />
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:name="Transform Error Message">
+                    <ee:message>
+                        <ee:set-payload resource="Error_Message.dwl" />
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <set-variable value="Not Implemented" doc:name="Set Error Meesage" doc:id="6a26eb09-ccd7-4090-84da-de5bfc75ab96" variableName="ERROR_MESSAGE" />
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:name="Transform Error Message">
+                    <ee:message>
+                         <ee:set-payload resource="Error_Message.dwl" />
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="put:\trade-line:application\json:sfs-trade-line-s-config">
+        <logger level="INFO" message="#['Request for PUT:\trade-line: received CorrelationId : ' ++ correlationId]" doc:name="Logger- Request Inception"/>
+		<flow-ref doc:name="Flow Reference" doc:id="ca2c23df-4d9d-4a95-94f3-23b35eeaf8e6" name="PutTradeLine"/>
+		<error-handler ref="SFS_Error_Handler" />
+    </flow>
+    <flow name="delete:\trade-line:application\json:sfs-trade-line-s-config">
+        <logger level="INFO" message="#['Request for DELETE:\trade-line: received CorrelationId : ' ++ correlationId]" doc:name="Logger- Request Inception"/>
+		<flow-ref doc:name="Flow Reference" doc:id="059fc26d-1e07-4e92-9997-5eb46c5e3ba8" name="DeleteTradeLine"/>
+		<error-handler ref="SFS_Error_Handler" />
+    </flow>
+    <flow name="get:\trade-lines:sfs-trade-line-s-config">
+        <logger level="INFO" message="#['Request for GET:\trade-lines: received CorrelationId : ' ++ correlationId]" doc:name="Logger- Request Inception"/>
+		<flow-ref doc:name="Flow Reference" doc:id="0ab985b0-6d81-4ba7-afa5-d27aac063dd8" name="GetTradeLines"/>
+		<error-handler ref="SFS_Error_Handler" />
+    </flow>
+    <flow name="post:\trade-line:application\json:sfs-trade-line-s-config">
+        <logger level="INFO" message="#['Request for POST:\trade-line: received CorrelationId : ' ++ correlationId]" doc:name="Logger- Request Inception"/>
+		<flow-ref doc:name="Flow Reference" doc:id="69685901-3a56-4048-8249-4e3e919f76ac" name="PostTradeLine"/>
+		<error-handler ref="SFS_Error_Handler" />
+    </flow>
+    <flow name="post:\trade-lines:application\json:sfs-trade-line-s-config">
+        <logger level="INFO" message="#['Request for POST:\trade-lines: received CorrelationId : ' ++ correlationId]" doc:name="Logger- Request Inception"/>
+		<flow-ref doc:name="Flow Reference" doc:id="5bc44042-9990-4dc0-bb2e-f5a8e69befa4" name="PostTradeLines"/>
+		<error-handler ref="SFS_Error_Handler" />
+    </flow>
+</mule>

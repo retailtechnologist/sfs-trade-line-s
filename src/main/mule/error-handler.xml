@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<error-handler name="SFS_Error_Handler" doc:id="30facccb-cf11-4b7d-96ec-48e1d72bddc4" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e5834466-a490-4899-a003-9d8ce3cce260" >
+			<set-variable value="Internal Server Error, please contact Sys Admin" doc:name="Set Error Message" doc:id="345ccd70-9cbf-44e3-abf1-9dcb2f0f6534" variableName="ERROR_MESSAGE" />
+			<ee:transform doc:name="Transform Error Message" doc:id="49a538d2-f9f7-4306-90ac-d1ab9a616aba" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" >
+				<ee:message >
+					<ee:set-payload resource="Error_Message.dwl" />
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+	</error-handler>
+</mule>

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<sub-flow name="PostTradeLines" doc:id="4d867352-4d5c-4364-8ceb-f287727aa272" >
+		<http:request method="GET" doc:name="Fecth TradeLines" doc:id="c7406001-452f-4c71-b14b-8a2bbea248c9" config-ref="HTTP_Request_configuration" path="/master/data.json"/>
+		<logger level="DEBUG" doc:name="Debug Logger- Trade Line Data" doc:id="0faeede9-7a5b-4a75-8188-9c7409d26ce0" message="#[payload]"/>
+		<ee:transform doc:name="Transform Tradeline Data" doc:id="34ac5b19-8918-4103-b373-765b2070a420" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var data = read(payload,"application/json")
+---
+
+
+data map{
+		id: $.id,
+		creditorName: $.creditorName,
+		firstName: $.firstName,
+		lastName: $.lastName,
+		minPaymentPercentage: $.minPaymentPercentage,
+		balance: $.balance
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:bulk-insert doc:name="Bulk insert Trade Lines" doc:id="d00dfae0-d2d9-4835-b280-62ce060add22" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO `SFS`.`TRADE_LINE` (`ID`, `CREATOR_NAME`, `FIRST_NAME`, `LAST_NAME`, `MIN_PAYMENT_PERCENT`, `BALANCE`) VALUES (:id, :creditorName, :firstName, :lastName, :minPaymentPercentage, :balance)]]></db:sql>
+		</db:bulk-insert>
+		<flow-ref doc:name="Call Success" doc:id="6fa49d73-d83b-473d-9686-7bba9c47e04c" name="Success"/>
+	</sub-flow>
+	<sub-flow name="GetTradeLines" doc:id="e6b29365-6b24-47a3-bc4f-f7bbc285eec0" >
+		<db:select doc:name="Select Trade Lines" doc:id="2c0b314f-ee5a-48ab-bc7f-6f446a75655e" config-ref="Database_Config">
+			<db:sql><![CDATA[select ID as id, CREATOR_NAME as creditorName, FIRST_NAME as firstname, LAST_NAME as lastname, MIN_PAYMENT_PERCENT as minPaymentPercentage, BALANCE as balance from SFS.TRADE_LINE]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform TradeLine Data" doc:id="7460a1ce-06ab-478b-abe6-aa73baa57517">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+
+payload map
+{
+	"id": $.id,
+	"creditorName": $.creditorName,
+	"firstname": $.firstname,
+	"lastname": $.lastname,
+	"minPaymentPercentage": $.minPaymentPercentage,
+	"balance" : $.balance	
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log Success" doc:id="250c5b54-c1fc-4c19-aabd-476cb7110932" message="#['Processed Request for CorrelationId ' ++ correlationId]"/>
+	</sub-flow>
+	<sub-flow name="PutTradeLine" doc:id="06808c0e-906b-4fe3-9128-731cb85a19da" >
+		<logger level="DEBUG" doc:name="Debug Logger- Before Db call" doc:id="d294b3ba-ae98-4ece-b266-c93ff30c0920" message="PUT- Before Update" />
+		<set-variable value="#[payload]" doc:name="Enrich Variable" doc:id="d2caed8b-c06d-4559-aaf8-45ad1013e762" variableName="enrichPayload"/>
+		<db:update doc:name="Update TradeLine" doc:id="22fffddf-ff61-4cec-bd75-3d9ce121c1c7" config-ref="Database_Config">
+			<db:sql><![CDATA[UPDATE `SFS`.`TRADE_LINE` set CREATOR_NAME=:createName, FIRST_NAME=:firstName, LAST_NAME=:lastName, MIN_PAYMENT_PERCENT=:minPaymentPercentage, BALANCE=:balance where ID=:id ]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+id: payload.id,
+createName: payload.creditorName,
+firstName: payload.firstName,
+lastName: payload.lastName,
+minPaymentPercentage: payload.minPaymentPercentage,
+balance: payload.balance
+}]]]></db:input-parameters>
+		</db:update>
+		<logger level="DEBUG" doc:name="Debug Logger- After Db Call" doc:id="aaaaa5fd-d82c-408e-abb0-500b7fb5b228" message="#[payload]" />
+		<choice doc:name="Choice" doc:id="587e344d-fed8-4973-bef6-8e31c8ca9c9e">
+			<when expression="payload.affectedRows&lt;1">
+				<set-payload value="#[vars.enrichPayload]" doc:name="Enrich Payload" doc:id="047648bb-736c-461e-b4b4-8dcf28554ead" />
+				<flow-ref doc:name="Call Post Tradeline" doc:id="2a6f0ec9-cee8-4d64-a65d-fb0ae495c700" name="PostTradeLine" />
+			</when>
+			<otherwise>
+				<flow-ref doc:name="Call Success" doc:id="0cf5daa8-810e-4579-9a81-395f4b77f09d" name="Success"/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="PostTradeLine" doc:id="5bc6bc0e-983e-4930-b479-690c044f054f" >
+		<logger level="DEBUG" doc:name="Logger- Debug Before Db call" doc:id="6cf89777-9bd2-40a3-951c-b82079836fed" message="payload"/>
+		<db:insert doc:name="Insert TradeLine" doc:id="eec2d32b-cef0-42e2-b132-4736ec2a550d" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO `SFS`.`TRADE_LINE` (`ID`, `CREATOR_NAME`, `FIRST_NAME`, `LAST_NAME`, `MIN_PAYMENT_PERCENT`, `BALANCE`) VALUES (:id, :creditorName, :firstName, :lastName, :minPaymentPercentage, :balance)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{id: payload.id,
+creditorName: payload.creditorName,
+firstName: payload.firstName,
+lastName: payload.lastName,
+minPaymentPercentage: payload.minPaymentPercentage,
+balance: payload.balance}]]]></db:input-parameters>
+		</db:insert>
+		<logger level="DEBUG" doc:name="Debug Logger- After Db Call" doc:id="404b874f-fabf-403d-8d95-86739dff212b" message="#[payload]"/>
+		<flow-ref doc:name="Call Success" doc:id="7f53e4a9-0362-468d-ad23-5b39bf1f544e" name="Success"/>
+	</sub-flow>
+	<sub-flow name="DeleteTradeLine" doc:id="ed53e800-981b-418f-9cf3-cf2884a388ff" >
+		<logger level="DEBUG" doc:name="Debug Logger- Before Db call" doc:id="0dc4d949-bdb3-46c4-95f0-cb1339ad40ba" message="Delete- Before Db Call"/>
+		<db:delete doc:name="Delete TradeLine" doc:id="6f4a8861-7eed-4441-b4f1-2dae9d8e7392" config-ref="Database_Config">
+			<db:sql ><![CDATA[DELETE from `SFS`.`TRADE_LINE` where ID=:id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id: payload.id,
+	creatorName: payload.creatorName
+}]]]></db:input-parameters>
+		</db:delete>
+		<logger level="DEBUG" doc:name="Debug Logger- After Db Call" doc:id="4a8ea0ca-20ef-4e97-9d95-e6d02029aa57" message="#[payload]" />
+		<flow-ref doc:name="Call Success" doc:id="7665f0b5-5f6a-4677-afb1-49a67fc53adc" name="Success"/>
+	</sub-flow>
+	<sub-flow name="Success" doc:id="b896deca-7d43-4c29-8b89-bf7dae6517ac" >
+		<logger level="INFO" doc:name="Log Success" doc:id="2106f45f-2760-4a97-b20d-e48c8fcbfc3a" message="#['Processed Request for CorrelationId ' ++ correlationId]"/>
+		<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;&#10;{&#10;	"Success": "True"&#10;}]' doc:name="Set Success Payload" doc:id="26dd6c02-45fb-41a8-8a13-f2212f121ea2" />
+	</sub-flow>
+</mule>

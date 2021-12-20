@@ -1,0 +1,24 @@
+app:
+  name: 'sfs-trade-line-s'
+  version: '1.0.0'
+  baseURL: 'api/*'
+  keyPath: 'cert/keystore.jks'
+  keyPassword: 'password'
+  
+api:
+  id: '123456'
+  host: '0.0.0.0'
+  port: '443'
+  
+  
+db:
+  host: 'localhost'
+  port: '3306'
+  user: 'root'
+  password : '![DTu3UTdgPiyRoRXO9kNV3Q==]'
+  database: 'sfs'
+
+sfs:
+  host: 'raw.githubusercontent.com'
+  baseURL: '/StrategicFS/Recruitment'
+

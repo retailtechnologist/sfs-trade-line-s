@@ -1,0 +1,56 @@
+#%RAML 1.0 Trait
+description: A trait to be used for all restful error responses
+
+responses:
+  400:
+    description: Bad Request
+    headers:
+      correlationId: 
+        type: string
+        required: false
+    body:
+      application/json:
+        type: !include ../dataTypes/common-apiresponse.raml
+  404:
+    description: 
+    headers:
+      correlationId?:
+        description: Response Unique Id
+        type: string
+        required: false
+    body:
+      application/json:
+        type: !include ../dataTypes/common-apiresponse.raml
+  405: 
+      description: Method not allowed
+      headers:
+        correlationId?:
+          description: Response Unique Id
+          type: string
+          required: false
+      body:
+        application/json:
+          type: !include ../dataTypes/common-apiresponse.raml
+
+  406: 
+      description: Not Acceptable
+      headers:
+        correlationId?:
+          description: Response Unique Id
+          type: string
+          required: false
+      body:
+        application/json:
+          type: !include ../dataTypes/common-apiresponse.raml
+  500: 
+        description: Internal Server Error
+        headers:
+          correlationId?:
+            description: Response Unique Id
+            type: string
+            required: false
+        body:
+          application/json:
+            type: !include ../dataTypes/common-apiresponse.raml
+
+

@@ -1,0 +1,15 @@
+#%RAML 1.0 Trait
+description: Restful Response
+usage: Apply this trait for success operations
+
+responses:
+  200:
+    description: OK
+    headers:
+      correlationId?:
+        description: Response unique Id
+        type: string
+        required: false
+    body:
+      application/json:
+          type: !include ../dataTypes/success.raml
